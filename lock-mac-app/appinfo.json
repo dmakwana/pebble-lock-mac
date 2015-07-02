@@ -1,0 +1,19 @@
+{
+  "uuid": "fd6c9622-99bd-418e-818e-06486ebcc9bf",
+  "shortName": "Lock your Mac",
+  "longName": "Lock your Mac",
+  "companyName": "MakeAwesomeHappen",
+  "versionCode": 1,
+  "versionLabel": "1.0",
+  "sdkVersion": "3",
+  "targetPlatforms": ["basalt"],
+  "watchapp": {
+    "watchface": false
+  },
+  "appKeys": {
+    "dummy": 0
+  },
+  "resources": {
+    "media": []
+  }
+}
