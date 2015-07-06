@@ -1,17 +1,23 @@
 {
   "uuid": "fd6c9622-99bd-418e-818e-06486ebcc9bf",
-  "shortName": "Lock your Mac",
-  "longName": "Lock your Mac",
-  "companyName": "MakeAwesomeHappen",
+  "shortName": "Lock Your Mac",
+  "longName": "Lock Your Mac",
+  "companyName": "Digvijay Makwana",
   "versionCode": 1,
   "versionLabel": "1.0",
   "sdkVersion": "3",
+  "capabilities": [
+    "configurable"
+  ],
   "targetPlatforms": ["basalt"],
   "watchapp": {
     "watchface": false
   },
   "appKeys": {
-    "dummy": 0
+    "_connected": 0,
+    "_locked": 1,
+    "_app": 2,
+    "_command": 3
   },
   "resources": {
     "media": []

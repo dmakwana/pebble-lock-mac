@@ -1,0 +1,182 @@
+diff --git a/SimonRemote.xcodeproj/project.pbxproj b/SimonRemote.xcodeproj/project.pbxproj
+index 19f33d4..40d88bf 100644
+--- a/SimonRemote.xcodeproj/project.pbxproj
++++ b/SimonRemote.xcodeproj/project.pbxproj
+@@ -7,6 +7,7 @@
+ 	objects = {
+ 
+ /* Begin PBXBuildFile section */
++		22262E731B4B31BD0026237F /* System-lock.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 22262E721B4B31BD0026237F /* System-lock.scpt */; };
+ 		2F0FCC45191E83190054BA64 /* Reachability.m in Sources */ = {isa = PBXBuildFile; fileRef = 2F0FCC44191E83190054BA64 /* Reachability.m */; };
+ 		2F21FA891904C812002DD68B /* iTunes-disable_shuffle.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 2F21FA871904C812002DD68B /* iTunes-disable_shuffle.scpt */; };
+ 		2F21FA8A1904C812002DD68B /* iTunes-enable_shuffle.scpt in Resources */ = {isa = PBXBuildFile; fileRef = 2F21FA881904C812002DD68B /* iTunes-enable_shuffle.scpt */; };
+@@ -94,6 +95,7 @@
+ /* End PBXCopyFilesBuildPhase section */
+ 
+ /* Begin PBXFileReference section */
++		22262E721B4B31BD0026237F /* System-lock.scpt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "System-lock.scpt"; path = "SimonRemote/Scripts/System/System-lock.scpt"; sourceTree = "<group>"; };
+ 		2F0FCC43191E83190054BA64 /* Reachability.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = Reachability.h; path = Reachability/Reachability.h; sourceTree = "<group>"; };
+ 		2F0FCC44191E83190054BA64 /* Reachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Reachability.m; path = Reachability/Reachability.m; sourceTree = "<group>"; };
+ 		2F21FA871904C812002DD68B /* iTunes-disable_shuffle.scpt */ = {isa = PBXFileReference; lastKnownFileType = file; name = "iTunes-disable_shuffle.scpt"; path = "SimonRemote/Scripts/iTunes/iTunes-disable_shuffle.scpt"; sourceTree = "<group>"; };
+@@ -300,6 +302,7 @@
+ 		2FD6924C18DD065000C8A1C9 /* System */ = {
+ 			isa = PBXGroup;
+ 			children = (
++				22262E721B4B31BD0026237F /* System-lock.scpt */,
+ 				69BF9C6E1A5756CF00425055 /* System-mouse_click.scpt */,
+ 				2FCFACA219119C8D00508B0A /* System-down.scpt */,
+ 				2FCFACA319119C8D00508B0A /* System-info.scpt */,
+@@ -494,6 +497,7 @@
+ 				2FCFACA819119C8D00508B0A /* System-down.scpt in Resources */,
+ 				2F921E2D18DA4E72006E2934 /* PowerPoint-start_slideshow.scpt in Resources */,
+ 				2F9B1D8C18D2B82700A41633 /* bottomright.png in Resources */,
++				22262E731B4B31BD0026237F /* System-lock.scpt in Resources */,
+ 				2F80476A18D3FCB50078905C /* Spotify-play.scpt in Resources */,
+ 				2FCFACAD19119C8D00508B0A /* System-up.scpt in Resources */,
+ 				2F21FA8A1904C812002DD68B /* iTunes-enable_shuffle.scpt in Resources */,
+@@ -658,8 +662,7 @@
+ 			buildSettings = {
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				CLANG_ENABLE_OBJC_ARC = YES;
+-				CODE_SIGN_IDENTITY = "Developer ID Application";
+-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
++				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "";
+ 				COMBINE_HIDPI_IMAGES = YES;
+ 				FRAMEWORK_SEARCH_PATHS = (
+ 					"$(inherited)",
+@@ -682,8 +685,7 @@
+ 			buildSettings = {
+ 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+ 				CLANG_ENABLE_OBJC_ARC = YES;
+-				CODE_SIGN_IDENTITY = "Developer ID Application";
+-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Mac Developer";
++				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "";
+ 				COMBINE_HIDPI_IMAGES = YES;
+ 				FRAMEWORK_SEARCH_PATHS = (
+ 					"$(inherited)",
+diff --git a/SimonRemote/ApplicationDelegate.h b/SimonRemote/ApplicationDelegate.h
+index 433f1d2..471f39b 100644
+--- a/SimonRemote/ApplicationDelegate.h
++++ b/SimonRemote/ApplicationDelegate.h
+@@ -4,6 +4,7 @@
+ #import "Reachability.h"
+ @interface ApplicationDelegate : NSObject <NSApplicationDelegate, PanelControllerDelegate>
+ 
++extern bool system_locked;
+ @property (nonatomic, strong) MenubarController *menubarController;
+ @property (nonatomic, strong, readonly) PanelController *panelController;
+ @property (nonatomic, strong) SRMessenger *messenger;
+diff --git a/SimonRemote/ApplicationDelegate.m b/SimonRemote/ApplicationDelegate.m
+index 0cb00a2..30c5cd0 100644
+--- a/SimonRemote/ApplicationDelegate.m
++++ b/SimonRemote/ApplicationDelegate.m
+@@ -15,6 +15,7 @@
+ @synthesize messenger = _messenger;
+ @synthesize numberActiveControllers = _numberActiveControllers;
+ 
++bool system_locked = false;
+ NSString *letters = @"ABCDEFGHIJKLMNPQRSTUVWXYZ";
+ 
+ #pragma mark - Notifications
+@@ -41,6 +42,20 @@ NSString *letters = @"ABCDEFGHIJKLMNPQRSTUVWXYZ";
+     NSLog(@"receiveWakeNote: %@", [note name]);
+ }
+ 
++- (void) receiveLockNote: (NSNotification*) note
++{
++  system_locked = true;
++  NSLog(@"receiveLockNote: %@", [note name]);
++  [[self messenger] sendNewInfoForApp:@"System"];
++}
++
++- (void) receiveUnlockNote: (NSNotification*) note
++{
++  system_locked = false;
++  NSLog(@"receiveUnlockNote: %@", [note name]);
++  [[self messenger] sendNewInfoForApp:@"System"];
++}
++
+ 
+ -(void)reachabilityChanged:(NSNotification*)note
+ {
+@@ -160,7 +175,14 @@ void *kContextActivePanel = &kContextActivePanel;
+     [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver: self
+                                                            selector: @selector(receiveWakeNote:)
+                                                                name: NSWorkspaceDidWakeNotification object: NULL];
+-    
++  
++    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver: self
++                                                           selector: @selector(receiveLockNote:)
++                                                               name: NSWorkspaceSessionDidResignActiveNotification object: NULL];
++    [[[NSWorkspace sharedWorkspace] notificationCenter] addObserver:self
++                                                           selector:@selector(receiveUnlockNote:)
++                                                               name:NSWorkspaceSessionDidBecomeActiveNotification object:NULL];
++  
+     // Player state changes
+     
+     [[NSDistributedNotificationCenter defaultCenter] addObserver:self
+@@ -189,8 +211,6 @@ void *kContextActivePanel = &kContextActivePanel;
+     channel = [self getChannel];
+     _messenger = [[SRMessenger alloc] initWithURL:WS_SERVER_URL andChannel:channel];
+     
+-    
+-    
+     [self setupNotificationsAndTimers];
+ }
+ 
+diff --git a/SimonRemote/SRActionHandler.m b/SimonRemote/SRActionHandler.m
+index 3cbca91..e180385 100644
+--- a/SimonRemote/SRActionHandler.m
++++ b/SimonRemote/SRActionHandler.m
+@@ -7,7 +7,7 @@
+ //
+ 
+ #import "SRActionHandler.h"
+-
++#import "ApplicationDelegate.h"
+ @implementation SRActionHandler
+ 
+ 
+@@ -169,8 +169,15 @@ static bool string_equal(NSString *one, NSString *two) {
+             [SRRunner runScriptFromFile:@"System-volume_up"];
+             
+         } else if (string_equal(command, @"volume_down")) {
+-            [SRRunner runScriptFromFile:@"System-volume_down"];
+-            
++          [SRRunner runScriptFromFile:@"System-volume_down"];
++          
++        } else if (string_equal(command, @"lock")) {
++          if (!system_locked) {
++            system_locked = true;
++            [SRRunner runScriptFromFile:@"System-lock"];
++          }
++        } else if (string_equal(command, @"info")) {
++          
+         }
+     }
+ }
+@@ -186,8 +193,15 @@ static bool string_equal(NSString *one, NSString *two) {
+     } else if (string_equal(app, @"Keynote")) {
+         return [SRRunner runScriptFromFile:@"Keynote-info"];
+     } else if (string_equal(app, @"System")) {
+-        // It doesn't return anything useful, so let's not put forth effort.
+-        // return [SRRunner runScriptFromFile:@"System-info"];
++      NSLog(@"Sending system data!\n");
++      NSMutableDictionary *dict =[[NSMutableDictionary alloc] init];
++      [dict setValue:@"System" forKey:@"_app"];
++      if (system_locked) {
++        [dict setValue:@1 forKey:@"_locked"];
++      } else {
++        [dict setValue:@0 forKey:@"_locked"];
++      }
++      return dict;
+     }
+     
+     return nil;
+diff --git a/SimonRemote/Scripts/System/System-lock.scpt b/SimonRemote/Scripts/System/System-lock.scpt
+new file mode 100644
+index 0000000..82dfe02
+--- /dev/null
++++ b/SimonRemote/Scripts/System/System-lock.scpt
+@@ -0,0 +1 @@
++do shell script "/System/Library/CoreServices/Menu\\ Extras/User.menu/Contents/Resources/CGSession -suspend"
